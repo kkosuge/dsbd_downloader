@@ -1,22 +1,11 @@
 #coding: utf-8
-require 'pp'
 require 'open-uri'
 require 'rexml/document'
-
 
 mail = ""
 pass = ""
 @path = "" #落としてきたやつ保存するフォルダの絶対パス
 
-
-
-#読み込み済みのやつを読む
-begin
- loaded = open(@path+"loaded.txt")
- till = loaded.read
-rescue
-  till = nil
-end
 
 
 class TumblrDownloader
@@ -82,6 +71,15 @@ def save_photo(photo)
   end
 end
 
+
+
+#読み込み済みのやつを読む
+begin
+  loaded = open(@path+"loaded.txt")
+  till = loaded.read
+rescue
+  till = nil
+end
 
 
 t = TumblrDownloader.new(mail, pass)
