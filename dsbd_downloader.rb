@@ -2,10 +2,23 @@
 require 'open-uri'
 require 'rexml/document'
 
-mail = ""
-pass = ""
-@path = "" #落としてきたやつ保存するフォルダの絶対パス
+require 'rubygems'
+require 'pit'
 
+config = Pit.get("tumblr", :require => {
+                   "mail" => "your email in tumblr",
+                   "pass" => "your password in tumblr"
+                 })
+mail = config['mail']
+pass = config['pass']
+
+@path = ARGV[0] or abort "usage: $0 <path_to_savedir>"
+
+#check directory
+while( /\/$/ =~ @path )
+  @path = @path.chop
+end
+File.directory? @path or abort "no such directory #{@path}"
 
 
 class TumblrDownloader
@@ -61,9 +74,9 @@ end
 def save_photo(photo)
   photo.each do |img|
     name = img[:link_url].gsub(/http:\/\//,'')
-    name = name.gsub('/',':')
+    name = name.gsub('/','_')
 
-    open(@path+name,'w') do |file|
+    open(@path + "/" + name,'w') do |file|
       open(img[:dl_url]) do |image|
         file.write(image.read)
       end
