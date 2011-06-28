@@ -2,5 +2,7 @@ Tumblrのdashboardから画像落としまくるスクリプト
 画像のリンクに指定されているURLをファイルの名前にしてくれる
 
 ■使い方
-mailとpassをセットして、@pathに保存するフォルダのパスをいれる
+ruby dsbd_downloader.rb <path_to_download_dir>
+初回起動時にtumblrのメールアドレスとパス訊かれるので設定してください
+(ミスったらpit setで再設定できます)
 cronなどで定期的に回すとHDDが潤います
