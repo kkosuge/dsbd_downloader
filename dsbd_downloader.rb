@@ -42,18 +42,17 @@ class TumblrDownloader
     photo = []
     open(self.url) do |f|
       doc = REXML::Document.new(f)
-      #TODO 正規表現やめたい
-      link_url = doc.to_s.scan(/<photo-link-url>.*?<\/photo-link-url>/)
-      dl_url = doc.to_s.scan(/<photo-url max-width='1280'>.*?<\/photo-url>/)
-      dl_url.each_with_index do |d,i|
-        unless link_url[i]
-          l = d.gsub(/<photo-url max-width='1280'>|<\/photo-url>/, "")
-        else
-          l = link_url[i].gsub(/<photo-link-url>|<\/photo-link-url>/, "")
-        end
-        d = d.gsub(/<photo-url max-width='1280'>|<\/photo-url>/, "")
-        break if @till == d
-        photo << {:link_url => l, :dl_url => d}
+
+      post = doc.root.get_elements("//post")
+      post.each do |el|
+        dl_url_el   = el.get_elements("photo-url[@max-width = '1280']")[0]
+        link_url_el = el.get_elements("photo-link-url")[0]
+
+        dl_url   = dl_url_el.get_text.to_s
+        link_url = link_url_el ? link_url_el.get_text.to_s : nil
+
+        break if @till == dl_url
+        photo << {:link_url => link_url, :dl_url => dl_url}
       end
     end
     return photo
@@ -73,22 +72,38 @@ end
 
 def save_photo(photo)
   photo.each do |img|
-    name = img[:link_url].gsub(/http:\/\//,'')
-    name = name.gsub('/','_')
+    url_for_filename = img[:link_url] ? img[:link_url] : img[:dl_url]
+    basename = url_for_filename.gsub(/http:\/\//,'')
+    basename = basename.gsub('/','_')
 
-    open(@path + "/" + name,'w') do |file|
-      open(img[:dl_url]) do |image|
+    open(img[:dl_url]) do |image|
+      filename = basename + get_extension(image)
+      open(@path + "/" + filename,'w') do |file|
         file.write(image.read)
       end
     end
   end
 end
 
-
+def get_extension(file)
+  header = file.read(8)
+  file.pos = 0
+  if ( /^\x89PNG/n.match(header) ) 
+    return ".png"
+  elsif (/^GIF8[79]a/n.match(header) )
+    return ".gif"
+  elsif( /^\xff\xd8/n.match(header) )
+    return ".jpg"
+  elsif( /^BM/n.match(header) )
+    return ".bmp"
+  else
+    return ""
+  end
+end
 
 #読み込み済みのやつを読む
 begin
-  loaded = open(@path+"loaded.txt")
+  loaded = open(@path+"/loaded.txt")
   till = loaded.read
 rescue
   till = nil
@@ -102,4 +117,4 @@ photo = t.photo
 save_photo(photo)
 
 #最後に保存したやつ保存する
-File.open(@path+"loaded.txt","w"){|f| f.print photo[0][:dl_url] if photo[0]}
+File.open(@path+"/loaded.txt","w"){|f| f.print photo[0][:dl_url] if photo[0]}
