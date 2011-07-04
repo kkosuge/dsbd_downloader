@@ -42,17 +42,18 @@ class TumblrDownloader
     photo = []
     open(self.url) do |f|
       doc = REXML::Document.new(f)
-
       post = doc.root.get_elements("//post")
+
       post.each do |el|
         dl_url_el   = el.get_elements("photo-url[@max-width = '1280']")[0]
         link_url_el = el.get_elements("photo-link-url")[0]
 
+        timestamp   = el.attributes.get_attribute("unix-timestamp").to_s
         dl_url   = dl_url_el.get_text.to_s
         link_url = link_url_el ? link_url_el.get_text.to_s : nil
 
         break if @till == dl_url
-        photo << {:link_url => link_url, :dl_url => dl_url}
+        photo << {:link_url => link_url, :dl_url => dl_url, :timestamp => timestamp}
       end
     end
     return photo
@@ -77,7 +78,7 @@ def save_photo(photo)
     basename = basename.gsub('/','_')
 
     open(img[:dl_url]) do |image|
-      filename = basename + get_extension(image)
+      filename = img[:timestamp] + basename + get_extension(image)
       open(@path + "/" + filename,'w') do |file|
         file.write(image.read)
       end
