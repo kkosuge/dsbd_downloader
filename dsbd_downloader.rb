@@ -52,7 +52,7 @@ class TumblrDownloader
         dl_url   = dl_url_el.get_text.to_s
         link_url = link_url_el ? link_url_el.get_text.to_s : nil
 
-        break if @till == dl_url
+        break if @till == timestamp
         photo << {:link_url => link_url, :dl_url => dl_url, :timestamp => timestamp}
       end
     end
@@ -77,11 +77,15 @@ def save_photo(photo)
     basename = url_for_filename.gsub(/http:\/\//,'')
     basename = basename.gsub('/','_')
 
-    open(img[:dl_url]) do |image|
-      filename = img[:timestamp] + basename + get_extension(image)
-      open(@path + "/" + filename,'w') do |file|
-        file.write(image.read)
+    begin
+      open(img[:dl_url]) do |image|
+        filename = img[:timestamp] + basename + get_extension(image)
+        open(@path + "/" + filename,'w') do |file|
+          file.write(image.read)
+        end
       end
+    rescue => ex
+      warn ex.message + " -- " + img[:dl_url] + " -- " + Time.now.strftime('%Y/%m/%d %H:%M:%S')
     end
   end
 end
@@ -118,4 +122,4 @@ photo = t.photo
 save_photo(photo)
 
 #最後に保存したやつ保存する
-File.open(@path+"/loaded.txt","w"){|f| f.print photo[0][:dl_url] if photo[0]}
+File.open(@path+"/loaded.txt","w"){|f| f.print photo[0][:timestamp] if photo[0]}
